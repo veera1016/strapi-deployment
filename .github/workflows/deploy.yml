@@ -41,42 +41,13 @@ jobs:
           # Install PM2 globally with npm 6
           npm install -g npm@6
           npm install -g pm2
-
-          # Log before attempting to clone
-          echo "Creating /srv/strapi-deployment directory"
           sudo mkdir -p /srv/strapi-deployment
-
-          # Verify if the directory was created and owned correctly
-          echo "Setting permissions for /srv/strapi-deployment"
           sudo chown -R $USER:$USER /srv/strapi-deployment
-
           # Log before cloning
           echo "Cloning repository"
           git clone https://github.com/veera1016/strapi-deployment.git /srv/strapi-deployment
-
-          # Log the contents of the cloned directory
-          echo "Cloned repository contents:"
           ls -al /srv/strapi-deployment
-
-          # Correct the path if needed
-          echo "Navigating to the project directory"
           cd /srv/strapi-deployment
-
-          # If the directory doesn't exist, print an error message and exit
-          if [ ! -d "strapi-project" ]; then
-            echo "Directory /srv/strapi-deployment/strapi-project does not exist. Exiting."
-            exit 1
-          fi
-
-          cd strapi-project
-          git pull origin master
-          npm install
-
-          # Start or restart Strapi using PM2
-          if pm2 list | grep -q "strapi"; then
-            echo "Restarting Strapi process"
-            pm2 restart strapi --update-env
-          else
-            echo "Starting Strapi process"
-            pm2 start npm --name "strapi" -- run start
-          fi
+          cd /srv/strapi && npm install
+          cd /srv/strapi && npm run build
+          pm2 start npm --name strapi -- start
