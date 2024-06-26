@@ -3,7 +3,7 @@ name: 'Code Workflow'
 on:
   push:
     branches:
-      - master
+      - saipavan
 
 jobs:
   deploy:
@@ -54,4 +54,12 @@ jobs:
           cd strapi-project
           git pull origin master
           npm install
-          pm2 restart strapi
+          
+          # Start or restart Strapi using PM2
+          if pm2 list | grep -q "strapi"; then
+            echo "Restarting Strapi process"
+            pm2 restart strapi --update-env
+          else
+            echo "Starting Strapi process"
+            pm2 start npm --name "strapi" -- run start
+          fi
