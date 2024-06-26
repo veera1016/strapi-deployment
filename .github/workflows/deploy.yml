@@ -25,4 +25,8 @@ jobs:
           sudo apt-get install -y nodejs
           sudo npm install -g pm2
           git clone https://github.com/veera1016/strapi-deployment.git
+          cd strapi-deployment
+          git pull origin master
+          npm install
+          pm2 restart strapi
 
