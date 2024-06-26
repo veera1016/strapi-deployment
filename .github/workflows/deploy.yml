@@ -24,9 +24,34 @@ jobs:
           curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           sudo apt-get install -y nodejs
           sudo npm install -g pm2
-          git clone https://github.com/veera1016/strapi-deployment.git
-          cd /strapi-deployment/strapi-project/
+          
+          # Log before attempting to clone
+          echo "Creating /srv/strapi-deployment directory"
+          sudo mkdir -p /srv/strapi-deployment
+          
+          # Verify if the directory was created and owned correctly
+          echo "Setting permissions for /srv/strapi-deployment"
+          sudo chown -R $USER:$USER /srv/strapi-deployment
+          
+          # Log before cloning
+          echo "Cloning repository"
+          git clone https://github.com/veera1016/strapi-deployment.git /srv/strapi-deployment
+
+          # Log the contents of the cloned directory
+          echo "Cloned repository contents:"
+          ls -al /srv/strapi-deployment
+          
+          # Correct the path if needed
+          echo "Navigating to the project directory"
+          cd /srv/strapi-deployment
+          
+          # If the directory doesn't exist, print an error message and exit
+          if [ ! -d "strapi-project" ]; then
+            echo "Directory /srv/strapi-deployment/strapi-project does not exist. Exiting."
+            exit 1
+          fi
+
+          cd strapi-project
           git pull origin master
           npm install
           pm2 restart strapi
-
