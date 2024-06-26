@@ -44,7 +44,7 @@ jobs:
 
           # Log before cloning
           echo "Cloning repository"
-          git clone https://github.com/veera1016/strapi-deployment.git /srv/strapi-deployment
+          git clone -b revert-1-master https://github.com/veera1016/strapi-deployment.git /srv/strapi-deployment
 
           # Log the contents of the cloned directory
           echo "Cloned repository contents:"
