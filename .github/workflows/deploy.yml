@@ -1,4 +1,4 @@
-name: 'Code Workflow'
+name: Deploy to EC2
 
 on:
   push:
@@ -10,66 +10,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Set up Node.js 14
+      - name: Install Node.js and npm
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '16'
 
-      - name: Deploy Strapi
-        env:
-          EC2_USER: ubuntu
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_KEY: ${{ secrets.EC2_KEY }}
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y curl
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            sudo apt-get update -y
+            sudo apt-get install -y curl
 
-          # Use nvm to install Node.js 14
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm install 14
-          nvm use 14
+            # Install nvm and Node.js 14
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm install 14
+            nvm use 14
 
-          # Verify Node.js and npm versions
-          node -v
-          npm -v
+            # Verify Node.js and npm versions
+            node -v
+            npm -v
 
-          # Install npm@6 and PM2
-          npm install -g npm@6
-          npm install -g pm2
+            # Install npm@6 and PM2
+            npm install -g npm@6
+            npm install -g pm2
 
-          # Log before cloning
-          echo "Cloning repository"
-          git clone -b revert-1-master https://github.com/veera1016/strapi-deployment.git /srv/strapi-deployment
+            # Clone the repository
+            git clone -b master https://github.com/veera1016/strapi-deployment.git /srv/strapi-deployment
 
-          # Log the contents of the cloned directory
-          echo "Cloned repository contents:"
-          ls -al /srv/strapi-deployment
+            # Log the contents of the cloned directory
+            echo "Cloned repository contents:"
+            ls -al /srv/strapi-deployment
 
-          # Navigate to the project directory
-          cd /srv/strapi-deployment
+            # Navigate to the project directory
+            cd /srv/strapi-deployment
 
-          # Verify the package.json file exists
-          if [ ! -f "package.json" ]; then
-            echo "package.json not found in /srv/strapi-deployment. Exiting."
-            exit 1
-          fi
+            # Verify the package.json file exists
+            if [ ! -f "package.json" ]; then
+              echo "package.json not found in /srv/strapi-deployment. Exiting."
+              exit 1
+            fi
 
-          git pull origin master
-          npm install
+            git pull origin master
+            npm install
 
-          # Start or restart Strapi using PM2
-          if pm2 list | grep -q "strapi"; then
-            echo "Restarting Strapi process"
-            pm2 restart strapi --update-env
-          else
-            echo "Starting Strapi process"
-            pm2 start npm --name "strapi" -- run start
-          fi
+            # Start or restart Strapi using PM2
+            if pm2 list | grep -q "strapi"; then
+              echo "Restarting Strapi process"
+              pm2 restart strapi --update-env
+            else
+              echo "Starting Strapi process"
+              pm2 start npm --name "strapi" -- run start
+            fi
 
-          # Check the PM2 logs
-          pm2 logs strapi
+            # Check the PM2 logs
+            pm2 logs strapi
