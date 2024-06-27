@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: build-and-deploy
 
 on:
   push:
@@ -6,70 +6,40 @@ on:
       - master
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Install Node.js and npm
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18.x'
 
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: |
-            sudo apt-get update -y
-            sudo apt-get install -y curl
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+      working-directory: ./strapi-project
 
-            # Install nvm and Node.js 14
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-            nvm install 14
-            nvm use 14
+    - name: Build Strapi project
+      run: npm run build
+      working-directory: ./strapi-project
 
-            # Verify Node.js and npm versions
-            node -v
-            npm -v
+    - name: Start SSH agent and add SSH key
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-            # Install npm@6 and PM2
-            npm install -g npm@6
-            npm install -g pm2
-
-            # Clone the repository into the home directory
-            git clone -b master https://github.com/veera1016/strapi-deployment.git ~/strapi-deployment
-
-            # Log the contents of the cloned directory
-            echo "Cloned repository contents:"
-            ls -al ~/strapi-deployment
-
-            # Navigate to the project directory
-            cd ~/strapi-deployment/strapi-project/
-
-            # Verify the package.json file exists
-            if [ ! -f "package.json" ]; then
-              echo "package.json not found in ~/strapi-deployment. Exiting."
-              exit 1
-            fi
-
-            git pull origin master
-            npm install
-
-            # Start or restart Strapi using PM2
-            if pm2 list | grep -q "strapi"; then
-              echo "Restarting Strapi process"
-              pm2 restart strapi --update-env
-            else
-              echo "Starting Strapi process"
-              pm2 start npx --name "strapi" -- strapi start
-            fi
-
-            # Check the PM2 logs
-            pm2 logs strapi
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /srv/strapi-project
+          git pull origin master
+          npm install --legacy-peer-deps
+          npm run build
+          pm2 restart strapi --update-env
