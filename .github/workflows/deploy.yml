@@ -25,6 +25,30 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
+            sudo apt-get update -y
+            sudo apt-get install -y curl
+
+            # Install nvm and Node.js 14
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm install 14
+            nvm use 14
+
+            # Verify Node.js and npm versions
+            node -v
+            npm -v
+
+            # Install npm@6 and PM2
+            npm install -g npm@6
+            npm install -g pm2
+
+            # Clone the repository into the home directory
+            git clone -b master https://github.com/veera1016/strapi-deployment.git ~/strapi-deployment
+
+            # Log the contents of the cloned directory
+            echo "Cloned repository contents:"
+            ls -al ~/strapi-deployment
 
             # Navigate to the project directory
             cd ~/strapi-deployment/strapi-project/
@@ -44,7 +68,7 @@ jobs:
               pm2 restart strapi --update-env
             else
               echo "Starting Strapi process"
-              pm2 start npm --name "strapi" -- run start
+              pm2 start npx --name "strapi" -- strapi start
             fi
 
             # Check the PM2 logs
