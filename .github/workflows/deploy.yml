@@ -18,11 +18,12 @@ jobs:
       with:
         node-version: '18.x'
 
-    - name: Set Node.js environment options
-      run: echo "NODE_OPTIONS=--openssl-legacy-provider" >> $GITHUB_ENV
-
     - name: Install dependencies
       run: npm install --legacy-peer-deps
+      working-directory: ./strapi-project
+
+    - name: Build Strapi project
+      run: npm run build
       working-directory: ./strapi-project
 
     - name: Start SSH agent and add SSH key
