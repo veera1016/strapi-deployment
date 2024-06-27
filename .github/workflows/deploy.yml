@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-     
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -23,7 +23,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_KEY }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
             sudo apt-get update -y
             sudo apt-get install -y curl
@@ -43,19 +43,19 @@ jobs:
             npm install -g npm@6
             npm install -g pm2
 
-            # Clone the repository
-            git clone -b master https://github.com/veera1016/strapi-deployment.git /srv/strapi-deployment
+            # Clone the repository into the home directory
+            git clone -b master https://github.com/veera1016/strapi-deployment.git ~/strapi-deployment
 
             # Log the contents of the cloned directory
             echo "Cloned repository contents:"
-            ls -al /srv/strapi-deployment
+            ls -al ~/strapi-deployment
 
             # Navigate to the project directory
-            cd /srv/strapi-deployment
+            cd ~/strapi-deployment
 
             # Verify the package.json file exists
             if [ ! -f "package.json" ]; then
-              echo "package.json not found in /srv/strapi-deployment. Exiting."
+              echo "package.json not found in ~/strapi-deployment. Exiting."
               exit 1
             fi
 
