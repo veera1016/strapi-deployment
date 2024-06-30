@@ -42,4 +42,4 @@ jobs:
           git pull origin master
           npm install --legacy-peer-deps
           npm run build
-          pm2 restart strapi --update-env
+          pm2 start npm --name "strapi-project" -- run start || pm2 restart strapi-project 
